@@ -8,13 +8,19 @@ import HomeScreen from "../views/HomeScreen";
 import CourseDetailScreen from "../views/CourseDetailScreen";
 import LessonDetailScreen from "../views/LessonDetailScreen"; // Thêm import
 import { useAuth } from "../context/AuthContext";
+import MyCourseScreen from "../views/MyCourseScreen";
+import AddCourseScreen from "../views/AddCourseScreen";
+// import AddLessonScreen from "../views/AddLessonScreen";
 
 export type RootStackParamList = {
     Login: undefined;
     Register: undefined;
     Home: undefined;
     CourseDetail: { courseId: string };
-    LessonDetail: { lessonId: string; courseId: string }; 
+    LessonDetail: { lessonId: string; courseId: string };
+    MyCourses: undefined;
+    AddCourse: undefined;
+    AddLesson: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -23,7 +29,7 @@ const AppNavigator = () => {
     const { currentUser, loading } = useAuth();
 
     if (loading) {
-        return null; // hoặc hiển thị LoadingScreen
+        return null;
     }
 
     return (
@@ -34,6 +40,9 @@ const AppNavigator = () => {
                         <Stack.Screen name="Home" component={HomeScreen} />
                         <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
                         <Stack.Screen name="LessonDetail" component={LessonDetailScreen} />
+                        <Stack.Screen name="MyCourses" component={MyCourseScreen} />
+                        <Stack.Screen name="AddCourse" component={AddCourseScreen} options={{ title: "Add Course" }} />
+                        {/* <Stack.Screen name="AddLesson" component={AddLessonScreen} /> */}
                     </>
                 ) : (
                     <>

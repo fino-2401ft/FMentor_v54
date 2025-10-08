@@ -21,6 +21,7 @@ export const Navbar = () => {
     const handlePress = (index: number) => {
         setActive(index);
         if (index === 0) navigation.navigate("Home");
+        if (index === 1) navigation.navigate("MyCourses")
         // else if (index === 2) navigation.navigate("MessengerMain");
         // Thêm điều hướng cho các index khác nếu cần
     };

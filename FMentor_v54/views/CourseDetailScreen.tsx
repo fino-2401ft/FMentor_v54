@@ -157,6 +157,8 @@ export default function CourseDetailScreen() {
 
             <View style={styles.tabContent}>
                 {activeTab === "lessons" ? (
+
+
                     <FlatList
                         data={lessons}
                         keyExtractor={(item) => item.getLessonId()}
@@ -263,7 +265,7 @@ const styles = StyleSheet.create({
     },
     participantIndex: { width: 30, fontSize: 16, color: "#333", marginRight: 8 },
     participantAvatar: { width: 40, height: 40, borderRadius: 20, marginRight: 12 },
-    participantUsername: { fontSize: 16, color: "#333" },
+    participantUsername: { fontSize: 16, color: "#000000ff", fontFamily: "bold" },
     progressWrapper: { marginTop: 4 },
     progressLabel: { fontSize: 12, color: "#666", marginBottom: 2 },
     participantProgress: { height: 8, borderRadius: 4 },

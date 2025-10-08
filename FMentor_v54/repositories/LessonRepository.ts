@@ -1,4 +1,4 @@
-import { get, ref, update, query, orderByChild, equalTo } from "firebase/database";
+import { get, ref, update, query, orderByChild, equalTo, remove, set } from "firebase/database";
 import { realtimeDB } from "../config/Firebase";
 import { Lesson } from "../models/Lesson";
 
@@ -107,4 +107,26 @@ export class LessonRepository {
       return [];
     }
   }
+
+    static async addLesson(lesson: Lesson): Promise<void> {
+    const lessonRef = ref(realtimeDB, `lessons/${lesson.getLessonId()}`);
+    await set(lessonRef, lesson.toJSON());
+  }
+
+  static async getLessonsByCourse(courseId: string): Promise<Lesson[]> {
+    const lessonsRef = ref(realtimeDB, "lessons");
+    const q = query(lessonsRef, orderByChild("courseId"), equalTo(courseId));
+
+    const snapshot = await get(q);
+    if (!snapshot.exists()) return [];
+
+    const data = snapshot.val();
+    return Object.values(data).map((item: any) => Lesson.fromJSON(item));
+  }
+
+  static async removeLesson(lessonId: string): Promise<void> {
+    const lessonRef = ref(realtimeDB, `lessons/${lessonId}`);
+    await remove(lessonRef);
+  }
+
 }

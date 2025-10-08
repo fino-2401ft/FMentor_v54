@@ -1,4 +1,4 @@
-import { ref, get, onValue } from "firebase/database";
+import { ref, get, onValue, set, remove, Database } from "firebase/database";
 import { realtimeDB } from "../config/Firebase";
 import { Course } from "../models/Course";
 import { Lesson } from "../models/Lesson";
@@ -64,7 +64,6 @@ export class CourseRepository {
     }
   }
 
-
   static async getUserProgress(courseId: string, menteeId: string): Promise<{ progress: number; completedLessons: string[] }> {
     const snapshot = await get(ref(realtimeDB, "enrollments"));
     if (!snapshot.exists()) return { progress: 0, completedLessons: [] };
@@ -82,4 +81,77 @@ export class CourseRepository {
 
     return { progress, completedLessons };
   }
+
+  static async addCourse(course: Course): Promise<void> {
+    const courseRef = ref(realtimeDB, `courses/${course.getCourseId()}`);
+    await set(courseRef, course.toJSON());
+  }
+
+  static async removeCourse(courseId: string): Promise<void> {
+    const courseRef = ref(realtimeDB, `courses/${courseId}`);
+    await remove(courseRef);
+  }
+
+  static async getAllCourses(): Promise<Course[]> {
+    const snapshot = await get(ref(realtimeDB, "courses"));
+    if (!snapshot.exists()) return [];
+    const data = snapshot.val();
+    return Object.values(data).map((c: any) => Course.fromJSON(c));
+  }
+
+  static async getMentoringCourses(userId: string): Promise<Course[]> {
+    const snapshot = await get(ref(realtimeDB, "courses"));
+    if (!snapshot.exists()) return [];
+
+    const data = snapshot.val();
+    const result = Object.values(data)
+      .filter((c: any) => c.mentorId === userId)
+      .map((c: any) => Course.fromJSON(c));
+
+    return result;
+  }
+
+  static async getEnrollingCourses(userId: string): Promise<Course[]> {
+    const enrollmentSnapshot = await get(ref(realtimeDB, "enrollments"));
+    if (!enrollmentSnapshot.exists()) return [];
+
+    const enrollmentData = enrollmentSnapshot.val();
+
+    // Lấy courseId của những enrollment có progress < 100
+    const activeCourseIds = Object.values(enrollmentData)
+      .filter((e: any) => e.menteeId === userId && (e.progress ?? 0) < 100)
+      .map((e: any) => e.courseId);
+
+    if (activeCourseIds.length === 0) return [];
+
+    const coursesSnapshot = await get(ref(realtimeDB, "courses"));
+    if (!coursesSnapshot.exists()) return [];
+
+    const coursesData = coursesSnapshot.val();
+    return Object.values(coursesData)
+      .filter((c: any) => activeCourseIds.includes(c.courseId))
+      .map((c: any) => Course.fromJSON(c));
+  }
+
+    static async getCompletedCourses(userId: string): Promise<Course[]> {
+      const enrollmentSnapshot = await get(ref(realtimeDB, "enrollments"));
+      if (!enrollmentSnapshot.exists()) return [];
+
+      const enrollmentData = enrollmentSnapshot.val();
+      const completedCourseIds = Object.values(enrollmentData)
+        .filter((e: any) => e.menteeId === userId && e.progress === 100)
+        .map((e: any) => e.courseId);
+
+      const coursesSnapshot = await get(ref(realtimeDB, "courses"));
+      if (!coursesSnapshot.exists()) return [];
+
+      const coursesData = coursesSnapshot.val();
+      const result = Object.values(coursesData)
+        .filter((c: any) => completedCourseIds.includes(c.courseId))
+        .map((c: any) => Course.fromJSON(c));
+
+      return result;
+    }
+
+
 }
