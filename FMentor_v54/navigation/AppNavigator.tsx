@@ -6,11 +6,12 @@ import LoginScreen from "../views/LoginView";
 import RegisterScreen from "../views/RegisterView";
 import HomeScreen from "../views/HomeScreen";
 import CourseDetailScreen from "../views/CourseDetailScreen";
-import LessonDetailScreen from "../views/LessonDetailScreen"; // Thêm import
+import LessonDetailScreen from "../views/LessonDetailScreen";
 import { useAuth } from "../context/AuthContext";
 import MyCourseScreen from "../views/MyCourseScreen";
 import AddCourseScreen from "../views/AddCourseScreen";
-// import AddLessonScreen from "../views/AddLessonScreen";
+import AddLessonScreen from "../views/AddLessonScreen";
+import EditLessonScreen from "../views/EditLessonScreen";
 
 export type RootStackParamList = {
     Login: undefined;
@@ -20,7 +21,8 @@ export type RootStackParamList = {
     LessonDetail: { lessonId: string; courseId: string };
     MyCourses: undefined;
     AddCourse: undefined;
-    AddLesson: undefined;
+    AddLesson: { courseId: string };
+    EditLesson: { lessonId: string; courseId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -42,7 +44,8 @@ const AppNavigator = () => {
                         <Stack.Screen name="LessonDetail" component={LessonDetailScreen} />
                         <Stack.Screen name="MyCourses" component={MyCourseScreen} />
                         <Stack.Screen name="AddCourse" component={AddCourseScreen} options={{ title: "Add Course" }} />
-                        {/* <Stack.Screen name="AddLesson" component={AddLessonScreen} /> */}
+                        <Stack.Screen name="AddLesson" component={AddLessonScreen} />
+                        <Stack.Screen name="EditLesson" component={EditLessonScreen} />
                     </>
                 ) : (
                     <>

@@ -1,4 +1,4 @@
-import { get, ref, remove, set } from "firebase/database";
+import { equalTo, get, orderByChild, query, ref, remove, set } from "firebase/database";
 import { realtimeDB } from "../config/Firebase";
 import { Enrollment } from "../models/Enrollment";
 
@@ -26,36 +26,40 @@ export class EnrollmentRepository {
     }
   }
 
-  static async getParticipantsByCourse(courseId: string): Promise<Enrollment[]> {
+static async getParticipantsByCourse(courseId: string): Promise<Participant[]> {
     try {
-      const enrollmentsRef = ref(realtimeDB, "enrollments");
+      const enrollmentsRef = query(ref(realtimeDB, "enrollments"), orderByChild("courseId"), equalTo(courseId));
       const snapshot = await get(enrollmentsRef);
-      const enrollments: Enrollment[] = [];
+      const participants: Participant[] = [];
+
       if (snapshot.exists()) {
         const enrollmentsData = snapshot.val();
+        console.log("Data enrollments:", enrollmentsData); 
         for (const enrollmentId in enrollmentsData) {
-          const enrollment = enrollmentsData[enrollmentId];
-          if (enrollment.courseId === courseId) {
-            enrollments.push(
-              new Enrollment(
-                enrollment.enrollmentId,
-                enrollment.courseId,
-                enrollment.menteeId,
-                enrollment.enrollmentDate,
-                enrollment.progress,
-                enrollment.completedLessons || []
-              )
-            );
+          const enrollment = Enrollment.fromJSON(enrollmentsData[enrollmentId]);
+          const userSnapshot = await get(ref(realtimeDB, `users/${enrollment.getMenteeId()}`));
+          if (userSnapshot.exists()) {
+            const userData = userSnapshot.val();
+            participants.push({
+              enrollmentId: enrollment.getEnrollmentId(),
+              userId: enrollment.getMenteeId(),
+              username: userData.username || "Unknown",
+              avatarUrl: userData.avatarUrl || "https://i.pravatar.cc/150?img=1",
+              progress: enrollment.getProgress(),
+            });
+          } else {
+            console.log(`No user data for menteee: ${enrollment.getMenteeId()}`);
           }
         }
+      } else {
+        console.log(`Enrollment not found ${courseId}`);
       }
-      return enrollments;
+      return participants;
     } catch (error) {
-      console.error("Error fetching participants:", error);
+      console.error("Error fetch participants", error);
       return [];
     }
   }
-
   static async addEnrollment(courseId: string, menteeId: string): Promise<void> {
     try {
       // Kiểm tra menteeId tồn tại trong users
@@ -80,7 +84,6 @@ export class EnrollmentRepository {
         }
       }
 
-      // Thêm enrollment mới
       const enrollmentId = `enrollment_${Date.now()}`;
       const enrollmentRef = ref(realtimeDB, `enrollments/${enrollmentId}`);
       await set(enrollmentRef, {

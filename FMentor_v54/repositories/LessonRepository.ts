@@ -56,12 +56,9 @@ export class LessonRepository {
 
       completedLessons.push(lessonId);
       const lessons = await this.getLessonsByCourseId(courseId);
-      const newProgress = (completedLessons.length / lessons.length) * 100;
-      await update(enrollmentRef, {
-        completedLessons,
-        progress: newProgress,
-      });
+      const newProgress = Math.round((completedLessons.length / lessons.length) * 100);
 
+      await update(enrollmentRef, { completedLessons, progress: newProgress });
       return newProgress;
     } catch (error) {
       console.error("Error marking lesson completed:", error);
@@ -108,7 +105,7 @@ export class LessonRepository {
     }
   }
 
-    static async addLesson(lesson: Lesson): Promise<void> {
+  static async addLesson(lesson: Lesson): Promise<void> {
     const lessonRef = ref(realtimeDB, `lessons/${lesson.getLessonId()}`);
     await set(lessonRef, lesson.toJSON());
   }
@@ -129,4 +126,8 @@ export class LessonRepository {
     await remove(lessonRef);
   }
 
+  static async updateLesson(lesson: Lesson): Promise<void> { // New
+    const lessonRef = ref(realtimeDB, `lessons/${lesson.getLessonId()}`);
+    await update(lessonRef, lesson.toJSON());
+  }
 }

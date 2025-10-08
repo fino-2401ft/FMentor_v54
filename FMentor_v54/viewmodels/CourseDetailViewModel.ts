@@ -1,11 +1,12 @@
+// src/viewmodels/CourseDetailViewModel.ts
 import { useState, useEffect } from "react";
+import { Alert } from "react-native";
 import { CourseRepository } from "../repositories/CourseRepository";
-import { EnrollmentRepository, Participant } from "../repositories/EnrollmentRepository"; // lấy Participant ở đây
+import { EnrollmentRepository, Participant } from "../repositories/EnrollmentRepository";
+import { LessonRepository } from "../repositories/LessonRepository";
 import { Course } from "../models/Course";
 import { Mentor } from "../models/User";
 import { Lesson } from "../models/Lesson";
-import { get, ref } from "firebase/database";
-import { realtimeDB } from "../config/Firebase";
 import { useAuth } from "../context/AuthContext";
 
 export function useCourseDetailViewModel(courseId: string) {
@@ -14,9 +15,12 @@ export function useCourseDetailViewModel(courseId: string) {
   const [mentor, setMentor] = useState<Mentor | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [filteredParticipants, setFilteredParticipants] = useState<Participant[]>([]);
   const [progress, setProgress] = useState(0);
   const [isMentor, setIsMentor] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [input, setInput] = useState("");
 
   const fetchData = async () => {
     try {
@@ -41,33 +45,22 @@ export function useCourseDetailViewModel(courseId: string) {
       const lessonsData = await CourseRepository.getLessonsByCourse(courseId);
       setLessons(lessonsData);
 
-      // Fetch participants with progress
-      const enrollments = await EnrollmentRepository.getParticipantsByCourse(courseId);
-      const userPromises = enrollments.map(async (enrollment) => {
-        const userSnapshot = await get(ref(realtimeDB, `users/${enrollment.getMenteeId()}`));
-        const userData = userSnapshot.val();
-        if (!userData) return null;
-        return {
-          enrollmentId: enrollment.getEnrollmentId(),
-          userId: userData.userId,
-          username: userData.username || "Unknown",
-          avatarUrl: userData.avatarUrl || "https://i.pravatar.cc/150?img=1",
-          progress: enrollment.getProgress(),  
-        } as Participant;
-      });
-      const participantsData = (await Promise.all(userPromises)).filter((p): p is Participant => p !== null);
+      // Fetch participants
+      const participantsData = await EnrollmentRepository.getParticipantsByCourse(courseId);
+      console.log("Participants fetched:", participantsData); // Debug log
       setParticipants(participantsData);
+      setFilteredParticipants(participantsData);
 
-      // Fetch progress for current user
+      // Fetch user progress
       if (currentUser) {
         const progressData = await CourseRepository.getUserProgress(courseId, currentUser.getUserId());
         setProgress(progressData.progress);
       } else {
         setProgress(0);
       }
-
     } catch (error) {
       console.error("Error fetching course details:", error);
+      Alert.alert("Error", "Failed to load course data");
     } finally {
       setLoading(false);
     }
@@ -77,5 +70,98 @@ export function useCourseDetailViewModel(courseId: string) {
     fetchData();
   }, [courseId, currentUser]);
 
-  return { course, mentor, lessons, participants, progress, isMentor, loading, fetchData };
+  const toggleEditMode = () => {
+    setEditMode(!editMode);
+  };
+
+  const handleAddMentee = async () => {
+    if (!input) {
+      Alert.alert("Error", "Please enter a username or ID");
+      return;
+    }
+    try {
+      await EnrollmentRepository.addEnrollment(courseId, input);
+      Alert.alert("Success", "Mentee added successfully");
+      setInput("");
+      await fetchData();
+    } catch (error: any) {
+      const message =
+        error.message === "Mentee ID or username does not exist"
+          ? "Mentee ID or username does not exist"
+          : error.message === "Mentee already enrolled in this course"
+            ? "Mentee already enrolled in this course"
+            : "Failed to add mentee";
+      Alert.alert("Error", message);
+    }
+  };
+
+  const handleSearchMentee = async () => {
+    if (!input) {
+      setFilteredParticipants(participants);
+      return;
+    }
+    try {
+      const results = await EnrollmentRepository.searchMenteeInCourse(courseId, input);
+      if (results.length === 0) {
+        Alert.alert("Error", "No mentee found");
+      }
+      setFilteredParticipants(results);
+    } catch (error) {
+      Alert.alert("Error", "Failed to search mentee");
+    }
+  };
+
+  const handleRemoveMentee = async (enrollmentId: string) => {
+    Alert.alert("Confirm", "Remove this mentee?", [
+      { text: "Cancel" },
+      {
+        text: "Remove",
+        onPress: async () => {
+          try {
+            await EnrollmentRepository.removeEnrollment(enrollmentId);
+            await fetchData();
+          } catch (error: any) {
+            Alert.alert("Error", error.message || "Failed to remove mentee");
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleRemoveLesson = async (lessonId: string) => {
+    Alert.alert("Confirm", "Delete this lesson?", [
+      { text: "Cancel" },
+      {
+        text: "Delete",
+        onPress: async () => {
+          try {
+            await LessonRepository.removeLesson(lessonId);
+            await fetchData();
+          } catch (error: any) {
+            Alert.alert("Error", error.message || "Failed to delete lesson");
+          }
+        },
+      },
+    ]);
+  };
+
+  return {
+    course,
+    mentor,
+    lessons,
+    participants,
+    filteredParticipants,
+    progress,
+    isMentor,
+    loading,
+    editMode,
+    input,
+    setInput,
+    fetchData,
+    toggleEditMode,
+    handleAddMentee,
+    handleSearchMentee,
+    handleRemoveMentee,
+    handleRemoveLesson,
+  };
 }

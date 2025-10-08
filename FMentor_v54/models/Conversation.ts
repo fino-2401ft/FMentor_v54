@@ -14,8 +14,8 @@ export class Conversation {
     conversationId: string,
     type: ConversationType,
     participants: string[],
-    lastUpdate: number,      // Required, đặt trước
-    lastMessageId?: string   // Optional, đặt sau
+    lastUpdate: number,      
+    lastMessageId?: string   
   ) {
     this.conversationId = conversationId;
     this.type = type;

@@ -1,16 +1,35 @@
-// src/viewmodels/AddLessonViewModel.ts
-import { useState } from "react";
+// src/viewmodels/EditLessonViewModel.ts
+import { useState, useEffect } from "react";
 import { Lesson } from "../models/Lesson";
 import { LessonRepository } from "../repositories/LessonRepository";
 import { CloudinaryUtils } from "../utils/CloudinaryUtils";
-import uuid from "react-native-uuid";
 
-export function useAddLessonViewModel(courseId: string) {
+export function useEditLessonViewModel(lessonId: string, courseId: string) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchLesson = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const lesson = await LessonRepository.getLessonById(lessonId);
+        if (lesson) {
+          setTitle(lesson.getTitle());
+          setContent(lesson.getContent());
+          setVideoUrl(lesson.getVideoUrl() ?? null);
+        }
+      } catch (e: any) {
+        setError(e.message || "Failed to fetch lesson");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLesson();
+  }, [lessonId]);
 
   const handleUploadVideo = async (fileUri: string) => {
     try {
@@ -27,7 +46,7 @@ export function useAddLessonViewModel(courseId: string) {
     }
   };
 
-  const handleAddLesson = async () => {
+  const handleUpdateLesson = async () => {
     if (!title.trim() || !content.trim()) {
       const errMsg = "Please fill all fields";
       setError(errMsg);
@@ -37,14 +56,13 @@ export function useAddLessonViewModel(courseId: string) {
     try {
       setLoading(true);
       setError(null);
-      const lessonId = uuid.v4().toString();
-      const newLesson = new Lesson(lessonId, courseId, title, content, videoUrl || "");
-      await LessonRepository.addLesson(newLesson);
+      const updatedLesson = new Lesson(lessonId, courseId, title, content, videoUrl || "");
+      await LessonRepository.updateLesson(updatedLesson);
       setTitle("");
       setContent("");
       setVideoUrl(null);
     } catch (e: any) {
-      setError(e.message || "Failed to add lesson");
+      setError(e.message || "Failed to update lesson");
       throw e;
     } finally {
       setLoading(false);
@@ -60,6 +78,6 @@ export function useAddLessonViewModel(courseId: string) {
     setTitle,
     setContent,
     handleUploadVideo,
-    handleAddLesson,
+    handleUpdateLesson,
   };
 }
