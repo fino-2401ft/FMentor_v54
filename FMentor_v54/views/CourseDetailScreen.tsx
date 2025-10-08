@@ -199,7 +199,19 @@ export default function CourseDetailScreen() {
                                 <View style={styles.participantItem}>
                                     <Text style={styles.participantIndex}>{index + 1}</Text>
                                     <Image source={{ uri: item.avatarUrl }} style={styles.participantAvatar} />
-                                    <Text style={styles.participantUsername}>{item.username}</Text>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.participantUsername}>{item.username}</Text>
+                                        {isMentor && (
+                                            <View style={styles.progressWrapper}>
+                                                <Text style={styles.progressLabel}>{item.progress}%</Text>
+                                                <ProgressBar
+                                                    progress={item.progress / 100}
+                                                    color="#1E90FF"
+                                                    style={styles.participantProgress}
+                                                />
+                                            </View>
+                                        )}
+                                    </View>
                                     {isMentor && (
                                         <Button
                                             mode="outlined"
@@ -226,152 +238,43 @@ export default function CourseDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#fff",
-    },
-    center: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    cover: {
-        width: "100%",
-        height: 200,
-        resizeMode: "cover",
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: "bold",
-        margin: 16,
-        color: "#333",
-    },
-    mentorContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginHorizontal: 16,
-        marginBottom: 16,
-    },
-    avatar: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        marginRight: 12,
-    },
-    mentorName: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: "#333",
-    },
-    expertise: {
-        fontSize: 14,
-        color: "#666",
-    },
-    progressContainer: {
-        marginHorizontal: 16,
-        marginBottom: 16,
-    },
-    progressText: {
-        fontSize: 16,
-        fontWeight: "bold",
-        marginBottom: 8,
-    },
-    progressBar: {
-        height: 10,
-        borderRadius: 5,
-    },
+    container: { flex: 1, backgroundColor: "#fff" },
+    center: { flex: 1, justifyContent: "center", alignItems: "center" },
+    cover: { width: "100%", height: 200, resizeMode: "cover" },
+    title: { fontSize: 24, fontWeight: "bold", margin: 16, color: "#333" },
+    mentorContainer: { flexDirection: "row", alignItems: "center", marginHorizontal: 16, marginBottom: 16 },
+    avatar: { width: 60, height: 60, borderRadius: 30, marginRight: 12 },
+    mentorName: { fontSize: 18, fontWeight: "bold", color: "#333" },
+    expertise: { fontSize: 14, color: "#666" },
+    progressContainer: { marginHorizontal: 16, marginBottom: 16 },
+    progressText: { fontSize: 16, fontWeight: "bold", marginBottom: 8 },
+    progressBar: { height: 10, borderRadius: 5 },
     tabContainer: {
-        flexDirection: "row",
-        marginHorizontal: 16,
-        marginBottom: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: "#ddd",
+        flexDirection: "row", marginHorizontal: 16, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: "#ddd"
     },
-    tab: {
-        flex: 1,
-        paddingVertical: 12,
-        alignItems: "center",
-    },
-    activeTab: {
-        borderBottomWidth: 2,
-        borderBottomColor: "#1E90FF",
-    },
-    tabText: {
-        fontSize: 16,
-        fontWeight: "500",
-        color: "#333",
-    },
-    tabContent: {
-        flex: 1,
-        paddingBottom: 80,
-    },
-    listItem: {
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: "#eee",
-    },
-    lessonTitle: {
-        fontSize: 16,
-        color: "#333",
-    },
+    tab: { flex: 1, paddingVertical: 12, alignItems: "center" },
+    activeTab: { borderBottomWidth: 2, borderBottomColor: "#1E90FF" },
+    tabText: { fontSize: 16, fontWeight: "500", color: "#333" },
+    tabContent: { flex: 1, paddingBottom: 80 },
+    listItem: { padding: 16, borderBottomWidth: 1, borderBottomColor: "#eee" },
+    lessonTitle: { fontSize: 16, color: "#333" },
     participantItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: "#eee",
+        flexDirection: "row", alignItems: "center", padding: 16, borderBottomWidth: 1, borderBottomColor: "#eee"
     },
-    participantIndex: {
-        width: 30,
-        fontSize: 16,
-        color: "#333",
-        marginRight: 8,
-    },
-    participantAvatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        marginRight: 12,
-    },
-    participantUsername: {
-        flex: 1,
-        fontSize: 16,
-        color: "#333",
-    },
+    participantIndex: { width: 30, fontSize: 16, color: "#333", marginRight: 8 },
+    participantAvatar: { width: 40, height: 40, borderRadius: 20, marginRight: 12 },
+    participantUsername: { fontSize: 16, color: "#333" },
+    progressWrapper: { marginTop: 4 },
+    progressLabel: { fontSize: 12, color: "#666", marginBottom: 2 },
+    participantProgress: { height: 8, borderRadius: 4 },
     mentorControls: {
-        flexDirection: "row",
-        alignItems: "center",
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: "#eee",
+        flexDirection: "row", alignItems: "center", padding: 16, borderBottomWidth: 1, borderBottomColor: "#eee"
     },
-    input: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: "#ddd",
-        padding: 8,
-        borderRadius: 4,
-        marginRight: 8,
-    },
-    button: {
-        backgroundColor: "#1E90FF",
-    },
-    searchButton: {
-        marginRight: 8,
-    },
-    removeButton: {
-        borderColor: "#FF3B30",
-    },
-    removeButtonText: {
-        color: "#FF3B30",
-    },
-    participantList: {
-        paddingBottom: 80,
-    },
-    navbarContainer: {
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-    },
+    input: { flex: 1, borderWidth: 1, borderColor: "#ddd", padding: 8, borderRadius: 4, marginRight: 8 },
+    button: { backgroundColor: "#1E90FF" },
+    searchButton: { marginRight: 8 },
+    removeButton: { borderColor: "#FF3B30" },
+    removeButtonText: { color: "#FF3B30" },
+    participantList: { paddingBottom: 80 },
+    navbarContainer: { position: "absolute", bottom: 0, left: 0, right: 0 },
 });

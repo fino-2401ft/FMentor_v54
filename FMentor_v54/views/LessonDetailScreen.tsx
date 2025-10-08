@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
     View,
     Text,
@@ -18,6 +18,7 @@ import WebView from "react-native-webview";
 import { useLessonDetailViewModel } from "../viewmodels/LessonDetailViewModel";
 import { useAuth } from "../context/AuthContext";
 import Header from "../components/Header";
+import { EnrollmentRepository } from "../repositories/EnrollmentRepository";
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -47,9 +48,11 @@ export default function LessonDetailScreen() {
     const { currentUser } = useAuth();
     const userId = currentUser?.getUserId() || "defaultUserId";
 
+
     const route = useRoute<any>();
     const navigation = useNavigation<NavigationProp>();
     const { lessonId, courseId } = route.params;
+    const [isMentor, setIsMentor] = useState(false);
 
     const {
         lesson,
@@ -60,6 +63,16 @@ export default function LessonDetailScreen() {
         getNextLessonId,
         getPreviousLessonId
     } = useLessonDetailViewModel(lessonId, courseId, userId);
+
+    useEffect(() => {
+        const checkMentor = async () => {
+            if (currentUser) {
+                const mentorId = await EnrollmentRepository.getMentorIdByCourse(courseId); // 👈 nhớ await
+                setIsMentor(currentUser.getUserId() === mentorId);
+            }
+        };
+        checkMentor();
+    }, [currentUser, courseId]);
 
     const handleCompleteLesson = async () => {
         try {
@@ -73,7 +86,7 @@ export default function LessonDetailScreen() {
     };
 
     const handlePreviousLesson = () => {
-        const prevLessonId = getPreviousLessonId(); // gọi từ ViewModel
+        const prevLessonId = getPreviousLessonId();
         if (prevLessonId) {
             navigation.navigate("LessonDetail", { lessonId: prevLessonId, courseId });
         } else {
@@ -139,7 +152,7 @@ export default function LessonDetailScreen() {
                 </View>
             </ScrollView>
 
-            {/* Sticky Buttons */}
+            {/* Action buttons */}
             <View style={styles.actionBar}>
                 <Button
                     mode="contained"
@@ -150,18 +163,22 @@ export default function LessonDetailScreen() {
                     Previous
                 </Button>
 
-                <Button
-                    mode="contained"
-                    onPress={handleCompleteLesson}
-                    style={[
-                        styles.button,
-                        isCompleted ? styles.completeButtonDisabled : styles.completeButton,
-                    ]}
-                    labelStyle={styles.buttonText}
-                    disabled={isCompleted}
-                >
-                    {isCompleted ? "Done" : "Complete"}
-                </Button>
+                {/* 👇 Ẩn nút Complete nếu là mentor */}
+                {!isMentor && (
+                    <Button
+                        mode="contained"
+                        onPress={handleCompleteLesson}
+                        style={[
+                            styles.button,
+                            isCompleted ? styles.completeButtonDisabled : styles.completeButton,
+                        ]}
+                        labelStyle={styles.buttonText}
+                        disabled={isCompleted}
+                    >
+                        {isCompleted ? "Done" : "Complete"}
+                    </Button>
+                )}
+
                 <Button
                     mode="contained"
                     onPress={handleNextLesson}
@@ -193,7 +210,7 @@ const styles = StyleSheet.create<Styles>({
     },
     scrollContent: {
         padding: 16,
-        paddingBottom: 120, // để chừa chỗ cho actionBar + Navbar
+        paddingBottom: 120,
     },
     lessonTitle: {
         fontSize: 20,

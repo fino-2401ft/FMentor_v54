@@ -1,19 +1,12 @@
 import { useState, useEffect } from "react";
 import { CourseRepository } from "../repositories/CourseRepository";
-import { EnrollmentRepository } from "../repositories/EnrollmentRepository";
+import { EnrollmentRepository, Participant } from "../repositories/EnrollmentRepository"; // lấy Participant ở đây
 import { Course } from "../models/Course";
 import { Mentor } from "../models/User";
 import { Lesson } from "../models/Lesson";
 import { get, ref } from "firebase/database";
 import { realtimeDB } from "../config/Firebase";
 import { useAuth } from "../context/AuthContext";
-
-interface Participant {
-  enrollmentId: string;
-  userId: string;
-  username: string;
-  avatarUrl: string;
-}
 
 export function useCourseDetailViewModel(courseId: string) {
   const { currentUser } = useAuth();
@@ -48,20 +41,19 @@ export function useCourseDetailViewModel(courseId: string) {
       const lessonsData = await CourseRepository.getLessonsByCourse(courseId);
       setLessons(lessonsData);
 
-      // Fetch participants with user info
+      // Fetch participants with progress
       const enrollments = await EnrollmentRepository.getParticipantsByCourse(courseId);
       const userPromises = enrollments.map(async (enrollment) => {
         const userSnapshot = await get(ref(realtimeDB, `users/${enrollment.getMenteeId()}`));
         const userData = userSnapshot.val();
-        if (!userData) {
-          return null; // Bỏ qua nếu không tìm thấy user
-        }
+        if (!userData) return null;
         return {
           enrollmentId: enrollment.getEnrollmentId(),
           userId: userData.userId,
           username: userData.username || "Unknown",
           avatarUrl: userData.avatarUrl || "https://i.pravatar.cc/150?img=1",
-        };
+          progress: enrollment.getProgress(),  
+        } as Participant;
       });
       const participantsData = (await Promise.all(userPromises)).filter((p): p is Participant => p !== null);
       setParticipants(participantsData);
@@ -73,13 +65,6 @@ export function useCourseDetailViewModel(courseId: string) {
       } else {
         setProgress(0);
       }
-
-      // Log current user
-      console.log("Current User:", currentUser ? {
-        userId: currentUser.getUserId(),
-        username: currentUser.getUsername(),
-        role: currentUser.getRole()
-      } : "Not logged in");
 
     } catch (error) {
       console.error("Error fetching course details:", error);

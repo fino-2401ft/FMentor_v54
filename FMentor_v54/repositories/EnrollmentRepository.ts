@@ -3,7 +3,10 @@ import { realtimeDB } from "../config/Firebase";
 import { Enrollment } from "../models/Enrollment";
 
 export class EnrollmentRepository {
-  static async getEnrollmentIdByUserId(courseId: string, userId: string): Promise<string | null> {
+  static async getEnrollmentIdByUserId(
+    courseId: string,
+    userId: string
+  ): Promise<string | null> {
     try {
       const enrollmentsRef = ref(realtimeDB, "enrollments");
       const snapshot = await get(enrollmentsRef);
@@ -53,7 +56,7 @@ export class EnrollmentRepository {
     }
   }
 
-static async addEnrollment(courseId: string, menteeId: string): Promise<void> {
+  static async addEnrollment(courseId: string, menteeId: string): Promise<void> {
     try {
       // Kiểm tra menteeId tồn tại trong users
       const userRef = ref(realtimeDB, `users/${menteeId}`);
@@ -86,9 +89,11 @@ static async addEnrollment(courseId: string, menteeId: string): Promise<void> {
         menteeId,
         enrollmentDate: Date.now(),
         progress: 0,
-        completedLessons: []
+        completedLessons: [],
       });
-      console.log(`Added enrollment ${enrollmentId} for mentee ${menteeId} in course ${courseId}`);
+      console.log(
+        `Added enrollment ${enrollmentId} for mentee ${menteeId} in course ${courseId}`
+      );
     } catch (error) {
       console.error("Error adding enrollment:", error);
       throw error;
@@ -106,7 +111,10 @@ static async addEnrollment(courseId: string, menteeId: string): Promise<void> {
     }
   }
 
-    static async searchMenteeInCourse(courseId: string, searchTerm: string): Promise<Participant[]> {
+  static async searchMenteeInCourse(
+    courseId: string,
+    searchTerm: string
+  ): Promise<Participant[]> {
     try {
       const enrollmentsRef = ref(realtimeDB, "enrollments");
       const snapshot = await get(enrollmentsRef);
@@ -117,7 +125,9 @@ static async addEnrollment(courseId: string, menteeId: string): Promise<void> {
           .filter((enrollmentId) => enrollmentsData[enrollmentId].courseId === courseId)
           .map(async (enrollmentId) => {
             const enrollment = enrollmentsData[enrollmentId];
-            const userSnapshot = await get(ref(realtimeDB, `users/${enrollment.menteeId}`));
+            const userSnapshot = await get(
+              ref(realtimeDB, `users/${enrollment.menteeId}`)
+            );
             const userData = userSnapshot.val();
             if (!userData) {
               return null;
@@ -127,12 +137,17 @@ static async addEnrollment(courseId: string, menteeId: string): Promise<void> {
               userId: userData.userId,
               username: userData.username || "Unknown",
               avatarUrl: userData.avatarUrl || "https://i.pravatar.cc/150?img=1",
+              progress: enrollment.progress ?? 0, // 👈 thêm progress
             };
           });
-        const participantsData = (await Promise.all(userPromises)).filter((p): p is Participant => p !== null);
+        const participantsData = (await Promise.all(userPromises)).filter(
+          (p): p is Participant => p !== null
+        );
         return participantsData.filter(
           (participant) =>
-            participant.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            participant.username
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
             participant.userId.toLowerCase().includes(searchTerm.toLowerCase())
         );
       }
@@ -143,39 +158,39 @@ static async addEnrollment(courseId: string, menteeId: string): Promise<void> {
     }
   }
 
-  static async getParticipantsWithProgress(courseId: string): Promise<Participant[]> {
+  static async getProgressByEnrollmentId(
+    enrollmentId: string
+  ): Promise<number> {
     try {
-      const enrollmentsRef = ref(realtimeDB, "enrollments");
-      const snapshot = await get(enrollmentsRef);
-      const participants: Participant[] = [];
+      const enrollmentRef = ref(realtimeDB, `enrollments/${enrollmentId}`);
+      const snapshot = await get(enrollmentRef);
 
       if (snapshot.exists()) {
-        const enrollmentsData = snapshot.val();
-
-        for (const enrollmentId in enrollmentsData) {
-          const enrollment = enrollmentsData[enrollmentId];
-
-          if (enrollment.courseId === courseId) {
-            // lấy thông tin user
-            const userSnap = await get(ref(realtimeDB, `users/${enrollment.menteeId}`));
-            if (!userSnap.exists()) continue;
-            const userData = userSnap.val();
-
-            participants.push({
-              enrollmentId: enrollment.enrollmentId,
-              userId: userData.userId,
-              username: userData.username || "Unknown",
-              avatarUrl: userData.avatarUrl || "https://i.pravatar.cc/150?img=1",
-              progress: enrollment.progress || 0, // lấy từ enrollment
-            });
-          }
-        }
+        const enrollment = snapshot.val();
+        return enrollment.progress ?? 0;
       }
 
-      return participants;
+      return 0;
     } catch (error) {
-      console.error("Error fetching participants with progress:", error);
-      return [];
+      console.error("Error fetching progress by enrollmentId:", error);
+      return 0;
+    }
+  }
+
+    static async getMentorIdByCourse(courseId: string): Promise<string | null> {
+    try {
+      const courseRef = ref(realtimeDB, `courses/${courseId}`);
+      const snapshot = await get(courseRef);
+
+      if (snapshot.exists()) {
+        const courseData = snapshot.val();
+        return courseData.mentorId || null;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error fetching mentorId by course:", error);
+      return null;
     }
   }
 }
@@ -185,5 +200,5 @@ export interface Participant {
   userId: string;
   username: string;
   avatarUrl: string;
-  progress: number;
+  progress: number; 
 }
