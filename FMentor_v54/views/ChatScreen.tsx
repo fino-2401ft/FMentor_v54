@@ -102,7 +102,14 @@ export const ChatScreen = () => {
                 <Image source={{ uri: conversationAvatar }} style={styles.avatarHeader} />
                 <View style={styles.headerInfo}>
                     <Text style={styles.headerTitle}>{conversationName}</Text>
-                    {isOnline && <View style={styles.onlineDot} />}
+
+                    {/* Hàng chứa chữ + chấm xanh */}
+                    <View style={styles.statusRow}>
+                        <Text style={styles.statusText}>
+                            {isOnline ? "Online" : "Offline"}
+                        </Text>
+                        {isOnline && <View style={styles.onlineDot} />}
+                    </View>
                 </View>
             </View>
             <FlatList
@@ -241,6 +248,16 @@ const styles = StyleSheet.create({
     emojiGrid: { justifyContent: "space-around" },
     emojiItem: { padding: 10, alignItems: "center" },
     emojiText: { fontSize: 24 },
+    statusRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 2,
+    },
+    statusText: {
+        fontSize: 12,
+        color: "#65676b",
+        marginRight: 6, // tạo khoảng cách giữa chữ và chấm
+    },
 });
 
 export default ChatScreen;

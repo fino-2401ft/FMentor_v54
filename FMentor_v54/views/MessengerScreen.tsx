@@ -82,7 +82,7 @@ const MessengerScreen = () => {
             <Header />
             <TextInput
                 style={styles.searchBar}
-                placeholder="Search for people or groups"
+                placeholder="Search by username or ID"
                 value={searchTerm}
                 onChangeText={handleSearch}
             />
