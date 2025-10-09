@@ -153,5 +153,17 @@ export class CourseRepository {
       return result;
     }
 
+    static async getCourseByChatGroupId(chatGroupId: string): Promise<any | null> {
+    const coursesSnapshot = await get(ref(realtimeDB, "courses"));
+    if (!coursesSnapshot.exists()) return null;
+    const coursesData = coursesSnapshot.val();
+    for (const courseId in coursesData) {
+      if (coursesData[courseId].chatGroupId === chatGroupId) {
+        return coursesData[courseId]; // Trả về dữ liệu khóa học
+      }
+    }
+    return null;
+  }
+
 
 }

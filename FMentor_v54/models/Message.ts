@@ -2,7 +2,6 @@ export enum MessageType {
   Text = "Text",
   Image = "Image",
   Video = "Video",
-  File = "File",
 }
 
 export class Message {
@@ -11,7 +10,6 @@ export class Message {
   private senderId: string;
   private content: string;
   private type: MessageType;
-  private mediaUrl?: string;
   private timestamp: number;
   private seen: boolean;
 
@@ -22,8 +20,7 @@ export class Message {
     content: string,
     type: MessageType,
     timestamp: number,
-    seen: boolean,
-    mediaUrl?: string // Optional, đặt sau
+    seen: boolean
   ) {
     this.messageId = messageId;
     this.conversationId = conversationId;
@@ -32,7 +29,6 @@ export class Message {
     this.type = type;
     this.timestamp = timestamp;
     this.seen = seen;
-    this.mediaUrl = mediaUrl;
   }
 
   // Getters
@@ -54,10 +50,6 @@ export class Message {
 
   getType(): MessageType {
     return this.type;
-  }
-
-  getMediaUrl(): string | undefined {
-    return this.mediaUrl;
   }
 
   getTimestamp(): number {
@@ -89,10 +81,6 @@ export class Message {
     this.type = type;
   }
 
-  setMediaUrl(mediaUrl: string | undefined): void {
-    this.mediaUrl = mediaUrl;
-  }
-
   setTimestamp(timestamp: number): void {
     this.timestamp = timestamp;
   }
@@ -108,7 +96,6 @@ export class Message {
       senderId: this.senderId,
       content: this.content,
       type: this.type,
-      mediaUrl: this.mediaUrl,
       timestamp: this.timestamp,
       seen: this.seen,
     };
@@ -119,11 +106,10 @@ export class Message {
       data.messageId,
       data.conversationId,
       data.senderId,
-      data.content,
+      data.content || "", 
       data.type,
       data.timestamp,
-      data.seen,
-      data.mediaUrl
+      data.seen
     );
   }
 }

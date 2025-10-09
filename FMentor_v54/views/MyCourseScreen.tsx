@@ -191,7 +191,6 @@ const MyCourseScreen: React.FC = () => {
                 )}
             </ScrollView>
 
-            {/* 🔹 Navbar luôn nằm dưới cùng màn hình */}
             <View style={styles.navbarContainer}>
                 <Navbar />
             </View>

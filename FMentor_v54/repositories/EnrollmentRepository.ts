@@ -1,3 +1,4 @@
+// repositories/EnrollmentRepository.ts
 import { equalTo, get, orderByChild, query, ref, remove, set } from "firebase/database";
 import { realtimeDB } from "../config/Firebase";
 import { Enrollment } from "../models/Enrollment";
@@ -26,7 +27,7 @@ export class EnrollmentRepository {
     }
   }
 
-static async getParticipantsByCourse(courseId: string): Promise<Participant[]> {
+  static async getParticipantsByCourse(courseId: string): Promise<Participant[]> {
     try {
       const enrollmentsRef = query(ref(realtimeDB, "enrollments"), orderByChild("courseId"), equalTo(courseId));
       const snapshot = await get(enrollmentsRef);
@@ -48,7 +49,7 @@ static async getParticipantsByCourse(courseId: string): Promise<Participant[]> {
               progress: enrollment.getProgress(),
             });
           } else {
-            console.log(`No user data for menteee: ${enrollment.getMenteeId()}`);
+            console.log(`No user data for mentee: ${enrollment.getMenteeId()}`);
           }
         }
       } else {
@@ -56,10 +57,11 @@ static async getParticipantsByCourse(courseId: string): Promise<Participant[]> {
       }
       return participants;
     } catch (error) {
-      console.error("Error fetch participants", error);
+      console.error("Error fetching participants", error);
       return [];
     }
   }
+
   static async addEnrollment(courseId: string, menteeId: string): Promise<void> {
     try {
       // Kiểm tra menteeId tồn tại trong users
@@ -140,7 +142,7 @@ static async getParticipantsByCourse(courseId: string): Promise<Participant[]> {
               userId: userData.userId,
               username: userData.username || "Unknown",
               avatarUrl: userData.avatarUrl || "https://i.pravatar.cc/150?img=1",
-              progress: enrollment.progress ?? 0, // 👈 thêm progress
+              progress: enrollment.progress ?? 0,
             };
           });
         const participantsData = (await Promise.all(userPromises)).filter(
@@ -180,7 +182,7 @@ static async getParticipantsByCourse(courseId: string): Promise<Participant[]> {
     }
   }
 
-    static async getMentorIdByCourse(courseId: string): Promise<string | null> {
+  static async getMentorIdByCourse(courseId: string): Promise<string | null> {
     try {
       const courseRef = ref(realtimeDB, `courses/${courseId}`);
       const snapshot = await get(courseRef);

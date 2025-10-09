@@ -12,6 +12,8 @@ import MyCourseScreen from "../views/MyCourseScreen";
 import AddCourseScreen from "../views/AddCourseScreen";
 import AddLessonScreen from "../views/AddLessonScreen";
 import EditLessonScreen from "../views/EditLessonScreen";
+import MessengerScreen from "../views/MessengerScreen";
+import ChatScreen from "../views/ChatScreen";
 
 export type RootStackParamList = {
     Login: undefined;
@@ -23,6 +25,8 @@ export type RootStackParamList = {
     AddCourse: undefined;
     AddLesson: { courseId: string };
     EditLesson: { lessonId: string; courseId: string };
+    Messenger: undefined;
+    Chat: { conversationId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -46,6 +50,8 @@ const AppNavigator = () => {
                         <Stack.Screen name="AddCourse" component={AddCourseScreen} options={{ title: "Add Course" }} />
                         <Stack.Screen name="AddLesson" component={AddLessonScreen} />
                         <Stack.Screen name="EditLesson" component={EditLessonScreen} />
+                        <Stack.Screen name="Messenger" component={MessengerScreen} />
+                        <Stack.Screen name="Chat" component={ChatScreen} />
                     </>
                 ) : (
                     <>
