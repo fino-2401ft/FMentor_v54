@@ -40,10 +40,11 @@ const ConversationCard: React.FC<ConversationCardProps> = ({
             onPress={() => navigation.navigate("Chat", { conversationId })}
         >
             <View style={styles.avatarContainer}>
-                <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-                <View
-                    style={[styles.statusDot, { backgroundColor: isOnline ? "#00ff00" : "#ccc" }]}
+                <Image
+                    source={{ uri: avatarUrl || "https://i.pravatar.cc/150?img=1" }}
+                    style={styles.avatar}
                 />
+                <View style={[styles.statusDot, { backgroundColor: isOnline ? "#00ff00" : "#ccc" }]} />
             </View>
             <View style={styles.info}>
                 <View style={styles.header}>
@@ -53,7 +54,7 @@ const ConversationCard: React.FC<ConversationCardProps> = ({
                     <Text style={styles.time}>{formattedTime}</Text>
                 </View>
                 <Text style={styles.lastMessage} numberOfLines={1}>
-                    {lastMessage}
+                    {lastMessage || "No messages yet"}
                 </Text>
             </View>
         </TouchableOpacity>

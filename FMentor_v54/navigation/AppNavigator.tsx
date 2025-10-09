@@ -15,6 +15,7 @@ import EditLessonScreen from "../views/EditLessonScreen";
 import MessengerScreen from "../views/MessengerScreen";
 import ChatScreen from "../views/ChatScreen";
 
+
 export type RootStackParamList = {
     Login: undefined;
     Register: undefined;

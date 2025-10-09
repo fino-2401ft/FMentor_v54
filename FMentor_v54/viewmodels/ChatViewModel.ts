@@ -1,10 +1,8 @@
-// viewmodels/useChatViewModel.ts
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { MessageRepository } from "../repositories/MessageRepository";
 import { ConversationRepository } from "../repositories/ConversationRepository";
 import { Message, MessageType } from "../models/Message";
 import { useAuth } from "../context/AuthContext";
-import * as ImagePicker from "expo-image-picker";
 
 export const useChatViewModel = (conversationId: string) => {
   const { currentUser } = useAuth();
@@ -12,75 +10,74 @@ export const useChatViewModel = (conversationId: string) => {
   const [newMessage, setNewMessage] = useState("");
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
   const [conversationName, setConversationName] = useState("Chat");
+  const [conversationAvatar, setConversationAvatar] = useState("https://i.pravatar.cc/150?img=1");
   const [isOnline, setIsOnline] = useState(false);
+
+  useEffect(() => {
+    const fetchConversationInfo = async () => {
+      const info = await ConversationRepository.getConversationInfo(conversationId, currentUser?.getUserId() || "");
+      if (info) {
+        setConversationName(info.name);
+        setConversationAvatar(info.avatarUrl);
+        setIsOnline(info.isOnline);
+      }
+    };
+    fetchConversationInfo();
+  }, [conversationId, currentUser]);
 
   useEffect(() => {
     const unsubscribe = MessageRepository.getMessagesRealtime(conversationId, (msgs) => {
       setMessages(msgs);
-    });
-
-    const fetchConversationDetails = async () => {
-      const details = await ConversationRepository.getConversationInfo(conversationId, currentUser?.getUserId() || "");
-      if (details) {
-        setConversationName(details.name);
-        setIsOnline(details.isOnline);
+      if (msgs.length > 0 && currentUser) {
+        const lastMessage = msgs[msgs.length - 1];
+        if (lastMessage.getSenderId() !== currentUser.getUserId()) {
+          MessageRepository.markMessageAsSeen(lastMessage.getMessageId(), conversationId, currentUser.getUserId());
+        }
       }
-    };
-    fetchConversationDetails();
-
+    });
     return unsubscribe;
-  }, [conversationId, currentUser?.getUserId]);
+  }, [conversationId, currentUser]);
 
-  const sendMessage = useCallback(async () => {
-    if (!newMessage.trim() && !isEmojiOpen) return;
-
-    const messageId = `msg_${Date.now()}`;
+  const sendMessage = async () => {
+    if (newMessage.trim() === "") return;
     const message = new Message(
-      messageId,
+      `msg_${Date.now()}`,
       conversationId,
       currentUser?.getUserId() || "",
       newMessage,
       MessageType.Text,
       Date.now(),
-      false
+      [currentUser?.getUserId() || ""]
     );
     await MessageRepository.sendMessage(message);
     setNewMessage("");
-    setIsEmojiOpen(false);
-  }, [newMessage, isEmojiOpen, conversationId, currentUser?.getUserId]);
+  };
 
-  const sendMedia = useCallback(async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All, // Cho phép chọn cả ảnh và video
-      allowsEditing: true,
-      quality: 1,
-    });
-    if (!result.canceled && result.assets && result.assets[0].uri) {
-      let url: string | null = null;
-      if (result.assets[0].type === "video") {
-        url = await MessageRepository.pickAndUploadVideo(result.assets[0].uri);
-      } else {
-        url = await MessageRepository.pickAndUploadImage(result.assets[0].uri);
-      }
-      if (url) {
-        const messageId = `msg_${Date.now()}`;
-        const messageType = result.assets[0].type === "video" ? MessageType.Video : MessageType.Image;
-        const message = new Message(
-          messageId,
-          conversationId,
-          currentUser?.getUserId() || "",
-          url,
-          messageType,
-          Date.now(),
-          false
-        );
-        await MessageRepository.sendMessage(message);
-      }
+  const sendMedia = async () => {
+    const result = await MessageRepository.pickAndUploadMedia();
+    if (result) {
+      const message = new Message(
+        `msg_${Date.now()}`,
+        conversationId,
+        currentUser?.getUserId() || "",
+        result.url,
+        result.type,
+        Date.now(),
+        [currentUser?.getUserId() || ""]
+      );
+      await MessageRepository.sendMessage(message);
     }
-  }, [conversationId, currentUser?.getUserId]);
+  };
+
+  const setTyping = async (isTyping: boolean) => {
+    if (currentUser) {
+      await MessageRepository.setTyping(conversationId, currentUser.getUserId(), isTyping);
+    }
+  };
 
   const onEmojiSelect = (emoji: string) => {
     setNewMessage((prev) => prev + emoji);
+    setIsEmojiOpen(false);
   };
 
   return {
@@ -90,9 +87,11 @@ export const useChatViewModel = (conversationId: string) => {
     isEmojiOpen,
     setIsEmojiOpen,
     conversationName,
+    conversationAvatar,
     isOnline,
     sendMessage,
     sendMedia,
+    setTyping,
     onEmojiSelect,
   };
 };

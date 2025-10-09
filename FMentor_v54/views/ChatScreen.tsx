@@ -1,35 +1,21 @@
-// screens/ChatScreen.tsx
-import React from "react";
-import {
-    View,
-    Text,
-    FlatList,
-    TextInput,
-    TouchableOpacity,
-    StyleSheet,
-    Image,
-    Modal,
-    TouchableWithoutFeedback,
-} from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Image, Modal, TouchableWithoutFeedback, Keyboard, Platform } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useChatViewModel } from "../viewmodels/ChatViewModel";
 import { Message, MessageType } from "../models/Message";
 import { WebView } from "react-native-webview";
+import { useAuth } from "../context/AuthContext";
+import { KeyboardAvoidingView } from "react-native";
 
-// Danh sách emoji cố định
-const FIXED_EMOJIS = [
-    "😀", "😂", "😍", "👍", "👎", "🎉", "❤️", "😢", "😴", "🤔",
-];
+const FIXED_EMOJIS = ["😀", "😂", "😍", "👍", "👎", "🎉", "❤️", "😢", "😴", "🤔"];
 
-type RouteParams = {
-    conversationId: string;
-};
+type RouteParams = { conversationId: string };
 
-const ChatScreen = () => {
+export const ChatScreen = () => {
     const navigation = useNavigation();
     const route = useRoute();
+    const { currentUser } = useAuth();
     const { conversationId } = route.params as RouteParams;
-
     const {
         messages,
         newMessage,
@@ -37,49 +23,58 @@ const ChatScreen = () => {
         isEmojiOpen,
         setIsEmojiOpen,
         conversationName,
+        conversationAvatar,
         isOnline,
         sendMessage,
         sendMedia,
+        setTyping,
         onEmojiSelect,
     } = useChatViewModel(conversationId);
+    const [senderAvatars, setSenderAvatars] = useState<{ [key: string]: string }>({});
+    const flatListRef = useRef<FlatList>(null);
 
-    // 🔍 Log tổng quan mỗi lần render
-    console.log("🔄 ChatScreen render:");
-    console.log("🧵 conversationId:", conversationId);
-    console.log("💬 conversationName:", conversationName);
-    console.log("📶 isOnline:", isOnline);
-    console.log("🧾 messages count:", messages?.length);
+    useEffect(() => {
+        const fetchAvatars = async () => {
+            const avatars: { [key: string]: string } = {};
+            for (const message of messages) {
+                if (!senderAvatars[message.getSenderId()] && !avatars[message.getSenderId()]) {
+                    const avatar = await message.getSenderAvatarUrl();
+                    if (avatar) avatars[message.getSenderId()] = avatar;
+                }
+            }
+            if (Object.keys(avatars).length > 0) {
+                setSenderAvatars((prev) => ({ ...prev, ...avatars }));
+            }
+        };
+        fetchAvatars();
+    }, [messages]);
 
-    const renderMessage = ({ item }: { item: Message }) => {
-        // Ghi log từng message
-        console.log("📩 Rendering message:", {
-            id: item.getMessageId?.(),
-            type: item.getType?.(),
-            content: item.getContent?.(),
-            sender: item.getSenderId?.(),
-        });
-
-        const isSentByCurrentUser = item.getSenderId() === "currentUserId"; // tùy chỉnh lại nếu có userId thực tế
+    const renderMessage = ({ item, index }: { item: Message; index: number }) => {
+        const isSentByCurrentUser = item.getSenderId() === currentUser?.getUserId();
+        const isLastSentMessage = isSentByCurrentUser && index === messages.filter(m => m.getSenderId() === currentUser?.getUserId()).length - 1;
         const messageStyle = isSentByCurrentUser ? styles.sentMessage : styles.receivedMessage;
-
-        const safeContent = String(item.getContent?.() ?? ""); // đảm bảo luôn là string
-        const messageType = item.getType?.();
+        const containerStyle = isSentByCurrentUser ? styles.sentContainer : styles.receivedContainer;
+        const senderAvatar = senderAvatars[item.getSenderId()] || "https://i.pravatar.cc/150?img=1";
 
         return (
-            <View style={[styles.messageContainer, isSentByCurrentUser && styles.sentContainer]}>
-                {messageType === MessageType.Text ? (
-                    <Text style={messageStyle}>{safeContent}</Text>
-                ) : messageType === MessageType.Image ? (
-                    <Image source={{ uri: safeContent }} style={styles.media} />
-                ) : messageType === MessageType.Video ? (
+            <View style={[styles.messageContainer, containerStyle]}>
+                {!isSentByCurrentUser && (
+                    <Image source={{ uri: senderAvatar }} style={styles.avatar} />
+                )}
+                {item.getType() === MessageType.Text ? (
+                    <Text style={messageStyle}>{item.getContent()}</Text>
+                ) : item.getType() === MessageType.Image ? (
+                    <Image source={{ uri: item.getContent() }} style={styles.media} />
+                ) : item.getType() === MessageType.Video ? (
                     <WebView
-                        source={{
-                            html: `<video width="200" height="200" controls><source src="${safeContent}" type="video/mp4"></video>`,
-                        }}
+                        source={{ html: `<video width="200" height="200" controls><source src="${item.getContent()}" type="video/mp4"></video>` }}
                         style={styles.media}
                     />
                 ) : (
                     <Text style={styles.unknownTypeText}>⚠️ Unknown message type</Text>
+                )}
+                {isLastSentMessage && (
+                    <Text style={styles.seenText}>{item.getSeenBy().length > 1 ? "Seen" : "Sent"}</Text>
                 )}
             </View>
         );
@@ -87,11 +82,7 @@ const ChatScreen = () => {
 
     const renderEmoji = ({ item }: { item: string }) => (
         <TouchableOpacity
-            onPress={() => {
-                console.log("😀 Emoji selected:", item);
-                onEmojiSelect(item);
-                setIsEmojiOpen(false);
-            }}
+            onPress={() => onEmojiSelect(item)}
             style={styles.emojiItem}
         >
             <Text style={styles.emojiText}>{item}</Text>
@@ -99,54 +90,53 @@ const ChatScreen = () => {
     );
 
     return (
-        <View style={styles.container}>
-            {/* Header */}
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+        >
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Image source={require("../images/icon_back.png")} style={styles.icon} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>{String(conversationName || "Chat")}</Text>
-                <View
-                    style={[
-                        styles.statusDot,
-                        { backgroundColor: isOnline ? "#00ff00" : "#ccc" },
-                    ]}
-                />
-                <Text style={styles.statusText}>{isOnline ? "Online" : "Offline"}</Text>
+                <Image source={{ uri: conversationAvatar }} style={styles.avatarHeader} />
+                <View style={styles.headerInfo}>
+                    <Text style={styles.headerTitle}>{conversationName}</Text>
+                    {isOnline && <View style={styles.onlineDot} />}
+                </View>
             </View>
-
-            {/* Danh sách tin nhắn */}
             <FlatList
+                ref={flatListRef}
                 data={messages}
                 renderItem={renderMessage}
-                keyExtractor={(item) => String(item.getMessageId?.() ?? Math.random().toString())}
+                keyExtractor={(item) => item.getMessageId()}
                 style={styles.messageList}
+                onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
             />
-
-            {/* Input */}
             <View style={styles.inputContainer}>
-                <TouchableOpacity onPress={() => setIsEmojiOpen(true)}>
-                    <Image source={require("../images/icon_emoji.png")} style={styles.icon} />
-                </TouchableOpacity>
+                <View style={styles.iconGroup}>
+                    <TouchableOpacity onPress={() => setIsEmojiOpen(true)} style={styles.iconButton}>
+                        <Image source={require("../images/icon_emoji.png")} style={styles.icon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={sendMedia} style={styles.iconButton}>
+                        <Image source={require("../images/icon_image.png")} style={styles.icon} />
+                    </TouchableOpacity>
+                </View>
                 <TextInput
                     style={styles.input}
                     value={newMessage}
                     onChangeText={(text) => {
-                        console.log("⌨️ Typing:", text);
                         setNewMessage(text);
+                        setTyping(text.length > 0);
                     }}
                     placeholder="Type a message..."
                     onSubmitEditing={sendMessage}
+                    onFocus={() => Keyboard.isVisible() && flatListRef.current?.scrollToEnd({ animated: true })}
                 />
-                <TouchableOpacity onPress={sendMedia}>
-                    <Image source={require("../images/icon_image.png")} style={styles.icon} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={sendMessage}>
+                <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
                     <Image source={require("../images/icon_send.png")} style={styles.icon} />
                 </TouchableOpacity>
             </View>
-
-            {/* Emoji Modal */}
             <Modal
                 visible={isEmojiOpen}
                 transparent={true}
@@ -167,7 +157,7 @@ const ChatScreen = () => {
                     </View>
                 </TouchableWithoutFeedback>
             </Modal>
-        </View>
+        </KeyboardAvoidingView>
     );
 };
 
@@ -176,29 +166,37 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: "row",
         alignItems: "center",
-        padding: 10,
-        backgroundColor: "#fff",
-        borderBottomWidth: 1,
+        paddingVertical: 20,
+        paddingHorizontal: 12,
+        backgroundColor: "transparent",
+        borderBottomWidth: 0,
         borderBottomColor: "#ddd",
+        marginTop: 35
     },
-    headerTitle: { fontSize: 18, fontWeight: "bold", marginLeft: 10, flex: 1 },
-    statusDot: { width: 10, height: 10, borderRadius: 5, marginLeft: 5 },
-    statusText: { fontSize: 12, color: "#666", marginLeft: 5 },
+    backButton: { marginRight: 10 },
+    avatarHeader: { width: 40, height: 40, borderRadius: 20, marginRight: 10 },
+    headerInfo: { flex: 1 },
+    headerTitle: { fontSize: 18, fontWeight: "bold", color: "#050505" },
+    onlineDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#31cc46", marginTop: 4 },
     messageList: { flex: 1, padding: 10 },
-    messageContainer: { maxWidth: "70%", marginVertical: 5 },
-    sentContainer: { alignSelf: "flex-end" },
-    receivedMessage: {
-        backgroundColor: "#e9ecef",
-        padding: 10,
-        borderRadius: 10,
-        borderTopLeftRadius: 0,
-    },
+    messageContainer: { flexDirection: "row", marginVertical: 5, maxWidth: "80%" },
+    sentContainer: { alignSelf: "flex-end", flexDirection: "row-reverse" },
+    receivedContainer: { alignSelf: "flex-start" },
+    avatar: { width: 30, height: 30, borderRadius: 15, marginRight: 8 },
     sentMessage: {
         backgroundColor: "#0084ff",
         color: "#fff",
         padding: 10,
-        borderRadius: 10,
-        borderTopRightRadius: 0,
+        borderRadius: 15,
+        borderBottomRightRadius: 5,
+    },
+    receivedMessage: {
+        backgroundColor: "#fff",
+        padding: 10,
+        borderRadius: 15,
+        borderBottomLeftRadius: 5,
+        borderWidth: 1,
+        borderColor: "#ddd",
     },
     media: { width: 200, height: 200, borderRadius: 10 },
     unknownTypeText: {
@@ -207,24 +205,28 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         color: "#900",
     },
+    seenText: { fontSize: 10, color: "#65676b", alignSelf: "flex-end", marginTop: 2 },
     inputContainer: {
         flexDirection: "row",
         alignItems: "center",
         padding: 10,
-        backgroundColor: "#fff",
+        paddingBottom: 30,
+        backgroundColor: "transparent",
         borderTopWidth: 1,
         borderTopColor: "#ddd",
     },
+    iconGroup: { flexDirection: "row", marginRight: 8 },
+    iconButton: { marginRight: 8 },
     input: {
         flex: 1,
         height: 40,
-        borderWidth: 1,
-        borderColor: "#ddd",
         borderRadius: 20,
-        paddingHorizontal: 10,
-        marginHorizontal: 5,
+        paddingHorizontal: 12,
+        backgroundColor: "#f0f2f5",
+        borderWidth: 0,
     },
-    icon: { width: 24, height: 24, marginHorizontal: 5 },
+    sendButton: { marginLeft: 8 },
+    icon: { width: 24, height: 24 },
     modalOverlay: {
         flex: 1,
         backgroundColor: "rgba(0,0,0,0.5)",
@@ -232,12 +234,12 @@ const styles = StyleSheet.create({
     },
     emojiModal: {
         backgroundColor: "#fff",
-        padding: 10,
+        padding: 12,
         borderTopLeftRadius: 10,
         borderTopRightRadius: 10,
     },
     emojiGrid: { justifyContent: "space-around" },
-    emojiItem: { padding: 5, alignItems: "center" },
+    emojiItem: { padding: 10, alignItems: "center" },
     emojiText: { fontSize: 24 },
 });
 

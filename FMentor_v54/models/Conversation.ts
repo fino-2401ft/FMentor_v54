@@ -7,15 +7,15 @@ export class Conversation {
   private conversationId: string;
   private type: ConversationType;
   private participants: string[];
-  private lastMessageId?: string;
   private lastUpdate: number;
+  private lastMessageId: string;
 
   constructor(
     conversationId: string,
     type: ConversationType,
     participants: string[],
-    lastUpdate: number,      
-    lastMessageId?: string   
+    lastUpdate: number,
+    lastMessageId: string = ""
   ) {
     this.conversationId = conversationId;
     this.type = type;
@@ -24,55 +24,25 @@ export class Conversation {
     this.lastMessageId = lastMessageId;
   }
 
-  // Getters
-  getConversationId(): string {
-    return this.conversationId;
-  }
+  getConversationId(): string { return this.conversationId; }
+  getType(): ConversationType { return this.type; }
+  getParticipants(): string[] { return this.participants; }
+  getLastUpdate(): number { return this.lastUpdate; }
+  getLastMessageId(): string { return this.lastMessageId; }
 
-  getType(): ConversationType {
-    return this.type;
-  }
-
-  getParticipants(): string[] {
-    return this.participants;
-  }
-
-  getLastMessageId(): string | undefined {
-    return this.lastMessageId;
-  }
-
-  getLastUpdate(): number {
-    return this.lastUpdate;
-  }
-
-  // Setters
-  setConversationId(conversationId: string): void {
-    this.conversationId = conversationId;
-  }
-
-  setType(type: ConversationType): void {
-    this.type = type;
-  }
-
-  setParticipants(participants: string[]): void {
-    this.participants = participants;
-  }
-
-  setLastMessageId(lastMessageId: string | undefined): void {
-    this.lastMessageId = lastMessageId;
-  }
-
-  setLastUpdate(lastUpdate: number): void {
-    this.lastUpdate = lastUpdate;
-  }
+  setConversationId(id: string): void { this.conversationId = id; }
+  setType(type: ConversationType): void { this.type = type; }
+  setParticipants(participants: string[]): void { this.participants = participants; }
+  setLastUpdate(lastUpdate: number): void { this.lastUpdate = lastUpdate; }
+  setLastMessageId(lastMessageId: string): void { this.lastMessageId = lastMessageId; }
 
   toJSON(): object {
     return {
       conversationId: this.conversationId,
       type: this.type,
       participants: this.participants,
-      lastMessageId: this.lastMessageId,
       lastUpdate: this.lastUpdate,
+      lastMessageId: this.lastMessageId,
     };
   }
 
@@ -80,9 +50,9 @@ export class Conversation {
     return new Conversation(
       data.conversationId,
       data.type,
-      data.participants,
-      data.lastUpdate,
-      data.lastMessageId
+      data.participants || [],
+      data.lastUpdate || 0,
+      data.lastMessageId || ""
     );
   }
 }
