@@ -8,7 +8,7 @@ import { Comment } from "../models/Comment";
 import { Post } from "../models/Post";
 import { User } from "../models/User";
 import PostCard from "../components/PostCard";
-import { ActivityIndicator } from "react-native-paper"; // Xóa dấu chấm phẩy
+import { ActivityIndicator } from "react-native-paper"; 
 import { useNewsfeedViewModel } from "../viewmodels/NewsfeedViewModel";
 import Header from "../components/Header";
 

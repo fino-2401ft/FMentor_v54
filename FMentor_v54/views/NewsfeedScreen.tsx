@@ -130,11 +130,12 @@ const NewsfeedScreen = () => {
         renderItem={renderPost}
         keyExtractor={(item) => item.getPostId()}
         style={styles.postList}
+        contentContainerStyle={{ paddingBottom: 90 }}
       />
 
       <NavBar />
     </View>
-    
+
   );
 };
 
