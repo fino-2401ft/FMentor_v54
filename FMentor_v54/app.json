@@ -13,7 +13,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Camera is used for video calls",
+        "NSMicrophoneUsageDescription": "Microphone is used for voice calls"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,10 +26,14 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.FMentor_v54"
+      "package": "com.anonymous.FMentor_v54",
+      "permissions": ["CAMERA", "RECORD_AUDIO"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "agoraAppId": "04d490cc39a8474e96901735ec2e362e"
     }
   }
 }

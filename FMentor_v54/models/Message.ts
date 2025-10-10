@@ -2,6 +2,7 @@ export enum MessageType {
   Text = "Text",
   Image = "Image",
   Video = "Video",
+  MeetingInvite = "MeetingInvite"
 }
 
 export class Message {

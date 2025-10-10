@@ -1,5 +1,4 @@
-// src/views/CourseDetailScreen.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
     Text,
@@ -18,6 +17,7 @@ import { Navbar } from "../components/Navbar";
 import { ProgressBar, Button } from "react-native-paper";
 import { Participant } from "../repositories/EnrollmentRepository";
 import { Lesson } from "../models/Lesson";
+import { useMeetingViewModel } from "../viewmodels/MeetingViewModel";
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -42,6 +42,7 @@ export default function CourseDetailScreen() {
         handleRemoveMentee,
         handleRemoveLesson,
     } = useCourseDetailViewModel(courseId);
+    const { isActive, latestMeetingId, startMeeting, joinMeeting } = useMeetingViewModel(courseId);
     const [activeTab, setActiveTab] = useState<"lessons" | "participants">("lessons");
 
     if (loading || !course || !mentor) {
@@ -107,16 +108,35 @@ export default function CourseDetailScreen() {
                     <Text style={styles.mentorName}>{mentor.getUsername()}</Text>
                     <Text style={styles.expertise}>{mentor.getExpertise().join(", ")}</Text>
                 </View>
-                {isMentor && !editMode && (
-                    <Button mode="outlined" onPress={toggleEditMode} style={{ marginLeft: "auto" }}>
-                        Edit
-                    </Button>
-                )}
-                {isMentor && editMode && (
-                    <Button mode="outlined" onPress={toggleEditMode} style={{ marginLeft: "auto" }}>
-                        Exit Edit
-                    </Button>
-                )}
+                <View style={styles.buttonContainer}>
+                    {isMentor ? (
+                        <>
+                            <Button
+                                mode="outlined"
+                                onPress={() => startMeeting(course.getChatGroupId())}
+                                style={styles.meetingButton}
+                            >
+                                Live
+                            </Button>
+                            <Button
+                                mode="outlined"
+                                onPress={toggleEditMode}
+                                style={styles.editButton}
+                            >
+                                {editMode ? "Exit Edit" : "Edit"}
+                            </Button>
+                        </>
+                    ) : (
+                        <Button
+                            mode="outlined"
+                            onPress={() => latestMeetingId && joinMeeting(latestMeetingId)}
+                            disabled={!isActive || !latestMeetingId}
+                            style={styles.meetingButton}
+                        >
+                            Join
+                        </Button>
+                    )}
+                </View>
             </View>
             {!isMentor && (
                 <View style={styles.progressContainer}>
@@ -198,7 +218,12 @@ const styles = StyleSheet.create({
     center: { flex: 1, justifyContent: "center", alignItems: "center" },
     cover: { width: "100%", height: 200, resizeMode: "cover" },
     title: { fontSize: 24, fontWeight: "bold", margin: 16, color: "#333" },
-    mentorContainer: { flexDirection: "row", alignItems: "center", marginHorizontal: 16, marginBottom: 16 },
+    mentorContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginHorizontal: 16,
+        marginBottom: 16
+    },
     avatar: { width: 60, height: 60, borderRadius: 30, marginRight: 12 },
     mentorName: { fontSize: 18, fontWeight: "bold", color: "#333" },
     expertise: { fontSize: 14, color: "#666" },
@@ -255,9 +280,17 @@ const styles = StyleSheet.create({
         color: "#ffffffff",
         fontSize: 14,
         fontWeight: "500",
-        textAlign: "center", // Ensure text is centered
+        textAlign: "center",
     },
     participantList: { paddingBottom: 80 },
     navbarContainer: { position: "absolute", bottom: 0, left: 0, right: 0 },
     emptyText: { fontSize: 16, color: "#666", textAlign: "center", marginTop: 20 },
+    buttonContainer: {
+        flexDirection: "row",
+        marginLeft: "auto"
+    },
+    meetingButton: {
+        marginRight: 8
+    },
+    editButton: {}
 });

@@ -1,8 +1,7 @@
-// navigation/AppNavigator.tsx
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer } from "@react-navigation/native";
-import LoginScreen from "../views/LoginView";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
 import RegisterScreen from "../views/RegisterView";
 import HomeScreen from "../views/HomeScreen";
 import CourseDetailScreen from "../views/CourseDetailScreen";
@@ -13,8 +12,13 @@ import AddCourseScreen from "../views/AddCourseScreen";
 import AddLessonScreen from "../views/AddLessonScreen";
 import EditLessonScreen from "../views/EditLessonScreen";
 import MessengerScreen from "../views/MessengerScreen";
-import ChatScreen from "../views/ChatScreen";
-
+import MeetingScreen from "../views/MeetingScreen";
+import { ChatScreen } from "../views/ChatScreen";
+import LoginView from "../views/LoginView";
+import ProfileView from "../views/ProfileView";
+import NewsfeedScreen from "../views/NewsfeedScreen";
+import PostDetailScreen from "../views/PostDetailScreen";
+import NotificationScreen from "../views/NotificationScreen";
 
 export type RootStackParamList = {
     Login: undefined;
@@ -28,6 +32,11 @@ export type RootStackParamList = {
     EditLesson: { lessonId: string; courseId: string };
     Messenger: undefined;
     Chat: { conversationId: string };
+    Meeting: { courseId: string; meetingId: string };
+    Profile: undefined;
+    Newsfeed: undefined;
+    PostDetail: { postId: string };
+    Notification: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -36,7 +45,11 @@ const AppNavigator = () => {
     const { currentUser, loading } = useAuth();
 
     if (loading) {
-        return null;
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#1E90FF" />
+            </View>
+        );
     }
 
     return (
@@ -45,6 +58,9 @@ const AppNavigator = () => {
                 {currentUser ? (
                     <>
                         <Stack.Screen name="Home" component={HomeScreen} />
+                        <Stack.Screen name="Newsfeed" component={NewsfeedScreen} />
+                        <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+                        <Stack.Screen name="Notification" component={NotificationScreen} />
                         <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
                         <Stack.Screen name="LessonDetail" component={LessonDetailScreen} />
                         <Stack.Screen name="MyCourses" component={MyCourseScreen} />
@@ -53,10 +69,12 @@ const AppNavigator = () => {
                         <Stack.Screen name="EditLesson" component={EditLessonScreen} />
                         <Stack.Screen name="Messenger" component={MessengerScreen} />
                         <Stack.Screen name="Chat" component={ChatScreen} />
+                        <Stack.Screen name="Meeting" component={MeetingScreen} />
+                        <Stack.Screen name="Profile" component={ProfileView} />
                     </>
                 ) : (
                     <>
-                        <Stack.Screen name="Login" component={LoginScreen} />
+                        <Stack.Screen name="Login" component={LoginView} />
                         <Stack.Screen name="Register" component={RegisterScreen} />
                     </>
                 )}
@@ -64,5 +82,14 @@ const AppNavigator = () => {
         </NavigationContainer>
     );
 };
+
+const styles = StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#F5F6FA",
+    },
+});
 
 export default AppNavigator;

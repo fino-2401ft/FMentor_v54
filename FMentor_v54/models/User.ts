@@ -2,125 +2,102 @@ import { get, ref } from "firebase/database";
 import { realtimeDB } from "../config/Firebase";
 
 export enum UserRole {
-    Mentor = "Mentor",
-    Mentee = "Mentee",
+  Mentor = "Mentor",
+  Mentee = "Mentee",
+}
+
+export class User {
+  private userId: string;
+  private username: string;
+  private email: string;
+  private avatarUrl: string;
+  private role: UserRole;
+  private online: boolean;
+
+  constructor(
+    userId: string,
+    username: string,
+    email: string,
+    avatarUrl: string,
+    role: UserRole,
+    online: boolean
+  ) {
+    this.userId = userId;
+    this.username = username;
+    this.email = email;
+    this.avatarUrl = avatarUrl;
+    this.role = role;
+    this.online = online;
   }
 
-  export class User {
-    private userId: string;
-    private username: string;
-    private email: string;
-    private avatarUrl: string;
-    private role: UserRole;
-    private online: boolean;
+  getUserId(): string { return this.userId; }
+  getUsername(): string { return this.username; }
+  getEmail(): string { return this.email; }
+  getAvatarUrl(): string { return this.avatarUrl; }
+  getRole(): UserRole { return this.role; }
+  getOnline(): boolean { return this.online; }
 
-    constructor(
-      userId: string,
-      username: string,
-      email: string,
-      avatarUrl: string,
-      role: UserRole,
-      online: boolean
-    ) {
-      this.userId = userId;
-      this.username = username;
-      this.email = email;
-      this.avatarUrl = avatarUrl;
-      this.role = role;
-      this.online = online;
-    }
+  setUserId(userId: string): void { this.userId = userId; }
+  setUsername(username: string): void { this.username = username; }
+  setEmail(email: string): void { this.email = email; }
+  setAvatarUrl(avatarUrl: string): void { this.avatarUrl = avatarUrl; }
+  setRole(role: UserRole): void { this.role = role; }
+  setOnline(online: boolean): void { this.online = online; }
 
-    // Getters
-    getUserId(): string {
-      return this.userId;
-    }
+  toJSON(): object {
+    return {
+      userId: this.userId,
+      username: this.username,
+      email: this.email,
+      avatarUrl: this.avatarUrl,
+      role: this.role,
+      online: this.online,
+    };
+  }
 
-    getUsername(): string {
-      return this.username;
-    }
+  static fromJSON(data: any): User {
+    return new User(
+      data.userId,
+      data.username,
+      data.email,
+      data.avatarUrl,
+      data.role,
+      data.online
+    );
+  }
 
-    getEmail(): string {
-      return this.email;
-    }
-
-    getAvatarUrl(): string {
-      return this.avatarUrl;
-    }
-
-    getRole(): UserRole {
-      return this.role;
-    }
-
-    getOnline(): boolean {
-      return this.online;
-    }
-
-    // Setters
-    setUserId(userId: string): void {
-      this.userId = userId;
-    }
-
-    setUsername(username: string): void {
-      this.username = username;
-    }
-
-    setEmail(email: string): void {
-      this.email = email;
-    }
-
-    setAvatarUrl(avatarUrl: string): void {
-      this.avatarUrl = avatarUrl;
-    }
-
-    setRole(role: UserRole): void {
-      this.role = role;
-    }
-
-    setOnline(online: boolean): void {
-      this.online = online;
-    }
-
-    toJSON(): object {
-      return {
-        userId: this.userId,
-        username: this.username,
-        email: this.email,
-        avatarUrl: this.avatarUrl,
-        role: this.role,
-        online: this.online,
-      };
-    }
-
-    static fromJSON(data: any): User {
-      return new User(
-        data.userId,
-        data.username,
-        data.email,
-        data.avatarUrl,
-        data.role,
-        data.online
-      );
-    }
-
-      public static async getMentorNameById(mentorId: string): Promise<string> {
-        try {
-            const mentorRef = ref(realtimeDB, `users/${mentorId}`);
-            const snapshot = await get(mentorRef);
-
-            if (snapshot.exists()) {
-                const mentorData = snapshot.val();
-                return mentorData.username || "Unknown";
-            } else {
-                return "Unknown";
-            }
-        } catch (error) {
-            console.error("Error getting mentor name:", error);
-            return "Unknown";
-        }
+  public static async getUserById(userId: string): Promise<User | null> {
+    try {
+      const userRef = ref(realtimeDB, `users/${userId}`);
+      const snapshot = await get(userRef);
+      if (snapshot.exists()) {
+        return User.fromJSON(snapshot.val());
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error("Error getting user:", error);
+      return null;
     }
   }
 
-//Mentor
+  public static async getMentorNameById(mentorId: string): Promise<string> {
+    try {
+      const mentorRef = ref(realtimeDB, `users/${mentorId}`);
+      const snapshot = await get(mentorRef);
+      if (snapshot.exists()) {
+        const mentorData = snapshot.val();
+        return mentorData.username || "Unknown";
+      } else {
+        return "Unknown";
+      }
+    } catch (error) {
+      console.error("Error getting mentor name:", error);
+      return "Unknown";
+    }
+  }
+}
+
 export class Mentor extends User {
   private expertise: string[];
 
@@ -138,15 +115,8 @@ export class Mentor extends User {
     this.expertise = expertise;
   }
 
-  // Getter
-  getExpertise(): string[] {
-    return this.expertise;
-  }
-
-  // Setter
-  setExpertise(expertise: string[]): void {
-    this.expertise = expertise;
-  }
+  getExpertise(): string[] { return this.expertise; }
+  setExpertise(expertise: string[]): void { this.expertise = expertise; }
 
   toJSON(): object {
     return {
@@ -167,5 +137,4 @@ export class Mentor extends User {
       data.expertise
     );
   }
-
 }

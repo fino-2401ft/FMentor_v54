@@ -13,17 +13,21 @@ export const Navbar = () => {
 
     const icons = [
         require("../images/icon_home.png"),
+        require("../images/icon_newsfeed.png"),
         require("../images/icon_course.png"),
         require("../images/icon_messenger.png"),
+        require("../images/icon_notification.png"),
         require("../images/icon_user.png"),
     ];
 
     const handlePress = (index: number) => {
         setActive(index);
         if (index === 0) navigation.navigate("Home");
-        if (index === 1) navigation.navigate("MyCourses")
-        if (index === 2) navigation.navigate("Messenger");
-        // Thêm điều hướng cho các index khác nếu cần
+        if (index === 1) navigation.navigate("Newsfeed")
+        if (index === 2) navigation.navigate("MyCourses")
+        if (index === 3) navigation.navigate("Messenger");
+        if (index === 4) navigation.navigate("Notification");
+        if (index === 5) navigation.navigate("Profile");
     };
 
     return (

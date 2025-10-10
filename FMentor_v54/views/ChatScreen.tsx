@@ -6,6 +6,8 @@ import { Message, MessageType } from "../models/Message";
 import { WebView } from "react-native-webview";
 import { useAuth } from "../context/AuthContext";
 import { KeyboardAvoidingView } from "react-native";
+import { Button } from "react-native-paper";
+import { useMeetingViewModel } from "../viewmodels/MeetingViewModel";
 
 const FIXED_EMOJIS = ["😀", "😂", "😍", "👍", "👎", "🎉", "❤️", "😢", "😴", "🤔"];
 
@@ -30,6 +32,7 @@ export const ChatScreen = () => {
         setTyping,
         onEmojiSelect,
     } = useChatViewModel(conversationId);
+    const { joinMeeting } = useMeetingViewModel(""); // courseId sẽ lấy từ message content
     const [senderAvatars, setSenderAvatars] = useState<{ [key: string]: string }>({});
     const flatListRef = useRef<FlatList>(null);
 
@@ -55,6 +58,44 @@ export const ChatScreen = () => {
         const messageStyle = isSentByCurrentUser ? styles.sentMessage : styles.receivedMessage;
         const containerStyle = isSentByCurrentUser ? styles.sentContainer : styles.receivedContainer;
         const senderAvatar = senderAvatars[item.getSenderId()] || "https://i.pravatar.cc/150?img=1";
+
+        if (item.getType() === MessageType.MeetingInvite) {
+            let inviteData;
+            try {
+                inviteData = JSON.parse(item.getContent());
+            } catch (error) {
+                console.error("Invalid meeting invite content:", error);
+                return (
+                    <View style={[styles.messageContainer, containerStyle]}>
+                        {!isSentByCurrentUser && (
+                            <Image source={{ uri: senderAvatar }} style={styles.avatar} />
+                        )}
+                        <Text style={messageStyle}>⚠️ Invalid meeting invite</Text>
+                    </View>
+                );
+            }
+
+            const { text, meetingId, courseId } = inviteData;
+
+            return (
+                <View style={[styles.messageContainer, containerStyle]}>
+                    {!isSentByCurrentUser && (
+                        <Image source={{ uri: senderAvatar }} style={styles.avatar} />
+                    )}
+                    <View style={styles.meetingInviteContainer}>
+                        <Text style={messageStyle}>{text}</Text>
+                        <Button
+                            mode="contained"
+                            onPress={() => joinMeeting(meetingId)}
+                            disabled={!meetingId}
+                            style={styles.joinButton}
+                        >
+                            Join
+                        </Button>
+                    </View>
+                </View>
+            );
+        }
 
         return (
             <View style={[styles.messageContainer, containerStyle]}>
@@ -102,8 +143,6 @@ export const ChatScreen = () => {
                 <Image source={{ uri: conversationAvatar }} style={styles.avatarHeader} />
                 <View style={styles.headerInfo}>
                     <Text style={styles.headerTitle}>{conversationName}</Text>
-
-                    {/* Hàng chứa chữ + chấm xanh */}
                     <View style={styles.statusRow}>
                         <Text style={styles.statusText}>
                             {isOnline ? "Online" : "Offline"}
@@ -256,8 +295,8 @@ const styles = StyleSheet.create({
     statusText: {
         fontSize: 12,
         color: "#65676b",
-        marginRight: 6, // tạo khoảng cách giữa chữ và chấm
+        marginRight: 6,
     },
+    meetingInviteContainer: { alignItems: "flex-start" },
+    joinButton: { marginTop: 8 },
 });
-
-export default ChatScreen;
